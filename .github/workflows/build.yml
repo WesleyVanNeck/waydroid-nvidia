@@ -284,8 +284,7 @@ jobs:
           if-no-files-found: error
 
   surfaceflinger:
-    name: guest surfaceflinger (self-hosted, lineage tree)
-    if: startsWith(github.ref, 'refs/tags/v') || github.event_name == 'workflow_dispatch'
+    name: guest surfaceflinger (self-hosted, lineage tree
     runs-on: [self-hosted, lineage]
     steps:
       - uses: actions/checkout@v4
