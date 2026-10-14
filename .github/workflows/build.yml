@@ -171,59 +171,6 @@ jobs:
           name: guest-gralloc
           path: stage/
           if-no-files-found: error
-
-  hwcomposer:
-    name: guest hwcomposer (clean-room, provision.sh)
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - name: Load pins
-        run: |
-          cat packaging/ci/pins.env | grep -v '^#' >> "$GITHUB_ENV"
-          cat packaging/ci/hwc-pins.env | grep -v '^#' >> "$GITHUB_ENV"
-      - name: Cache NDK
-        id: ndk-cache
-        uses: actions/cache@v4
-        with:
-          path: ~/android-ndk
-          key: ndk-${{ env.NDK_VERSION }}
-      - name: Install NDK
-        if: steps.ndk-cache.outputs.cache-hit != 'true'
-        run: |
-          curl -sSfLo ndk.zip "https://dl.google.com/android/repository/android-ndk-${NDK_VERSION}-linux.zip"
-          if [ -n "$NDK_ZIP_SHA256" ]; then echo "$NDK_ZIP_SHA256  ndk.zip" | sha256sum -c; fi
-          unzip -q ndk.zip -d "$HOME"
-          mv "$HOME/android-ndk-${NDK_VERSION}" "$HOME/android-ndk"
-      - name: Host deps
-        run: |
-          sudo apt-get update -q
-          sudo apt-get install -yq cmake bison flex libssl-dev libjsoncpp-dev pkg-config \
-            meson ninja-build libexpat1-dev e2fsprogs unzip zstd xz-utils
-      - name: Cache provisioned tree
-        uses: actions/cache@v4
-        with:
-          path: ~/wnv
-          key: hwc-wnv-${{ hashFiles('packaging/ci/hwc-pins.env') }}
-      - name: Fetch hwcomposer source at pinned base
-        run: |
-          git init -q hwc-src
-          git -C hwc-src fetch -q --depth 1 "$HWC_UPSTREAM" "$HWC_SHA"
-          git -C hwc-src checkout -q FETCH_HEAD
-          git -C hwc-src apply "$GITHUB_WORKSPACE"/patches/hwcomposer/0001-*.patch
-      - name: Provision (clones, hidl-gen, headers, static deps, image libs)
-        run: REPO="$GITHUB_WORKSPACE" NDK="$HOME/android-ndk" ./build/hwcomposer/provision.sh "$HOME/wnv" "$PWD/hwc-src"
-      - name: Build hwcomposer.waydroid.so
-        run: |
-          WNV="$HOME/wnv" ROOTFS="$HOME/wnv/image-rootfs" NDK="$HOME/android-ndk" \
-            ./build/hwcomposer/build.sh "$PWD/hwc-src/hwcomposer" "$PWD/hwc-out"
-          mkdir -p stage/vendor/lib64/hw
-          cp hwc-out/hwcomposer.waydroid.stripped.so stage/vendor/lib64/hw/hwcomposer.waydroid.so
-      - uses: actions/upload-artifact@v4
-        with:
-          name: guest-hwcomposer
-          path: stage/
-          if-no-files-found: error
-
   angle:
     name: guest ANGLE (self-hosted, persistent checkout)
     runs-on: [self-hosted, lineage]
