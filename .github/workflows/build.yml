@@ -226,7 +226,6 @@ jobs:
 
   angle:
     name: guest ANGLE (self-hosted, persistent checkout)
-    if: startsWith(github.ref, 'refs/tags/v') || github.event_name == 'workflow_dispatch'
     runs-on: [self-hosted, lineage]
     steps:
       - uses: actions/checkout@v4
